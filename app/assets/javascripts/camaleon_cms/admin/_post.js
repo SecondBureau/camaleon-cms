@@ -73,14 +73,14 @@ function init_post(obj) {
                 '<strong>' + I18n("msg.permalink") + ':&nbsp;</strong><span class="sl-link"></span> <span> &nbsp;&nbsp;</span>' +
                 '<a href="#" class="btn btn-default btn-xs btn-edit">' + I18n("button.edit") + '</a> &nbsp;&nbsp; ' +
                 '<a href="#" class="btn btn-info btn-xs btn-preview" target="_blank">' + I18n("msg.preview") + '</a> &nbsp;&nbsp; ' +
-                '<a href="#" class="btn btn-success btn-xs btn-view" style="display: none" target="_blank">' + I18n("msg.view_page") + '</a>' +
+                //'<a href="#" class="btn btn-success btn-xs btn-view" style="display: none" target="_blank">' + I18n("msg.view_page") + '</a>' +
                 '</div>').hide();
             $this.addClass('sluged');
             $this.after($link)
 
             function set_slug(slug) {
                 $link.show().find('.sl-link').html(post_path.replace('__-__', '<span class="sl-url">' + slug + '</span>'))
-                $link.find('.btn-preview').attr('href', post_path.replace('__-__', slug) + '?draft_id=' + post_draft_id)
+                $link.find('.btn-preview').attr('href', post_path.replace('__-__', '#/post/' + slug) + '?draft_id=' + post_draft_id)
                 $input_slug.trigger('change_in');
                 set_meta_slug();
             }
