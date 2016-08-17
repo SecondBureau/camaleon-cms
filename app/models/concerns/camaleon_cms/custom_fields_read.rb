@@ -188,8 +188,9 @@ module CamaleonCms::CustomFieldsRead extend ActiveSupport::Concern
   def set_field_values(datas = {})
     if datas.present?
       self.field_values.delete_all
-      datas.each do |index, fields_data|
-        fields_data.each do |field_key, values|
+      #datas.each do |index, fields_data|
+      #  fields_data.each do |field_key, values|
+      datas.each do |index, values|
           if values[:values].present?
             order_value = -1
             ((values[:values].is_a?(Hash) || values[:values].is_a?(ActionController::Parameters)) ? values[:values].values : values[:values]).each do |value|
@@ -197,7 +198,7 @@ module CamaleonCms::CustomFieldsRead extend ActiveSupport::Concern
             end
           end
         end
-      end
+        #end
     end
   end
 
