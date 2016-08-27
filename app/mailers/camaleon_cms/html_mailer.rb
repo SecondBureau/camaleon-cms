@@ -35,7 +35,7 @@ class CamaleonCms::HtmlMailer < ActionMailer::Base
       end.merge({domain: (current_site.the_url.to_s.parse_domain rescue "localhost"),
                                              authentication: "plain",
                                              enable_starttls_auto: true})
-    
+    end
     mail_data[:cc] = data[:cc_to].clean_empty.join(",") if data[:cc_to].present?
     mail_data[:from] = data[:from] if data[:from].present?
 
