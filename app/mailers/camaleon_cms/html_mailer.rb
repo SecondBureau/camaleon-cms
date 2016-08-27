@@ -22,10 +22,10 @@ class CamaleonCms::HtmlMailer < ActionMailer::Base
     mail_data = {to: email, subject: subject}
     if (ENV['SMTP_SERVER']) || (current_site.get_option("mailer_enabled") == 1)
       mail_data[:delivery_method] = :smtp
-      mail_data[:delivery_method_options] = {user_name: current_site.get_option("email_username") || ENV['SMTP_LOGIN'],
-                                             password: current_site.get_option("email_pass") || ENV['SMTP_PWD'],
-                                             address: current_site.get_option("email_server") || ENV['SMTP_SERVER'],
-                                             port: current_site.get_option("email_port") || ENV['SMTP_PORT'],
+      mail_data[:delivery_method_options] = {user_name: current_site.get_option("email_username").strip.blank? ?  ENV['SMTP_LOGIN'] : current_site.get_option("email_username").strip,
+                                             password: current_site.get_option("email_pass").strip.blank? ?  ENV['SMTP_PWD'] : current_site.get_option("email_pass").strip,
+                                             address: current_site.get_option("email_server").strip.blank? ?  ENV['SMTP_SERVER'] : current_site.get_option("email_server").strip,
+                                             port: current_site.get_option("email_port").strip.blank? ?  ENV['SMTP_PORT'] : current_site.get_option("email_port").strip,
                                              domain: (current_site.the_url.to_s.parse_domain rescue "localhost"),
                                              authentication: "plain",
                                              enable_starttls_auto: true
