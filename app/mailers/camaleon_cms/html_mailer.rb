@@ -20,17 +20,22 @@ class CamaleonCms::HtmlMailer < ActionMailer::Base
     data[:cc_to] = [data[:cc_to]] if data[:cc_to].is_a?(String) || !data[:cc_to].present?
 
     mail_data = {to: email, subject: subject}
-    if (ENV['SMTP_SERVER']) || (current_site.get_option("mailer_enabled") == 1)
+    if ENV['SMTP_SERVER'] || current_site.get_option("mailer_enabled").eql?(1)
       mail_data[:delivery_method] = :smtp
-      mail_data[:delivery_method_options] = {user_name: current_site.get_option("email_username").strip.blank? ?  ENV['SMTP_LOGIN'] : current_site.get_option("email_username").strip,
-                                             password: current_site.get_option("email_pass").strip.blank? ?  ENV['SMTP_PWD'] : current_site.get_option("email_pass").strip,
-                                             address: current_site.get_option("email_server").strip.blank? ?  ENV['SMTP_SERVER'] : current_site.get_option("email_server").strip,
-                                             port: current_site.get_option("email_port").strip.blank? ?  ENV['SMTP_PORT'] : current_site.get_option("email_port").strip,
-                                             domain: (current_site.the_url.to_s.parse_domain rescue "localhost"),
+      mail_data[:delivery_method_options] = if current_site.get_option("mailer_enabled").eql?(1)
+        {user_name: current_site.get_option("email_username"),
+        password: current_site.get_option("email_pass"),
+        address: current_site.get_option("email_server"),
+        port: current_site.get_option("email_port")}
+      else 
+        {user_name: ENV['SMTP_LOGIN'],
+         password: ENV['SMTP_PWD'],
+         address: ENV['SMTP_SERVER'],
+         port: (ENV['SMTP_PORT'].to_i rescue 587)}
+      end.merge({domain: (current_site.the_url.to_s.parse_domain rescue "localhost"),
                                              authentication: "plain",
-                                             enable_starttls_auto: true
-      }
-    end
+                                             enable_starttls_auto: true})
+    
     mail_data[:cc] = data[:cc_to].clean_empty.join(",") if data[:cc_to].present?
     mail_data[:from] = data[:from] if data[:from].present?
 
