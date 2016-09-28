@@ -115,11 +115,9 @@ module CamaleonCms::SessionHelper
     return nil unless c.size == 3
 
     if c[1] == request.user_agent && request.ip == c[2]
-      @cama_current_user = (current_site.users_include_admins.find_by_auth_token(c[0]).decorate rescue nil)
+      @cama_current_user = current_site.users_include_admins.find_by_auth_token(c[0]).try(:decorate)
     end
   end
-
-  alias_method :current_user, :cama_current_user
 
   # check if a visitor was logged in
   # if the user was not logged in, then redirect to login url
@@ -141,6 +139,13 @@ module CamaleonCms::SessionHelper
   private
   # calculate the current user for API
   def cama_calc_api_current_user
-    current_site.users_include_admins.find(doorkeeper_token.resource_owner_id).decorate if doorkeeper_token rescue nil
+    begin
+      doorkeeper_token
+    rescue NameError
+      # hack, this method should be called from a context which has
+      # doorkeeper_token defined
+      return nil
+    end
+    current_site.users_include_admins.find_by_id(doorkeeper_token.resource_owner_id).try(:decorate) if doorkeeper_token
   end
 end

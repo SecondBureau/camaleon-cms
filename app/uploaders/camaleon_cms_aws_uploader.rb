@@ -1,4 +1,13 @@
 class CamaleonCmsAwsUploader < CamaleonCmsUploader
+
+  def after_initialize
+    @cloudfront = @aws_settings[:cloud_front] || @current_site.get_option("filesystem_s3_cloudfront")
+    @aws_region = @aws_settings[:region] || @current_site.get_option("filesystem_region", 'us-west-2')
+    @aws_akey = @aws_settings[:access_key] || @current_site.get_option("filesystem_s3_access_key")
+    @aws_asecret = @aws_settings[:secret_key] || @current_site.get_option("filesystem_s3_secret_key")
+    @aws_bucket = @aws_settings[:bucket] || @current_site.get_option("filesystem_s3_bucket_name")
+  end
+
   # recover all files from AWS and parse it to save into DB as cache
   def browser_files
     objects = {}
@@ -14,11 +23,11 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
   def file_parse(s3_file)
     key = s3_file.is_a?(String) ? s3_file : s3_file.key
     key = "/#{key}" unless key.starts_with?('/')
-    is_dir = File.extname(key) == ''
+    is_dir = s3_file.is_a?(String) || File.extname(key) == ''
     res = {
         "name" => File.basename(key),
         "key" => key,
-        "url" => is_dir ? '' : (@current_site.get_option("filesystem_s3_cloudfront").present? ? File.join(@current_site.get_option("filesystem_s3_cloudfront"), key) : s3_file.public_url),
+        "url" => is_dir ? '' : (@cloudfront.present? ? File.join(@cloudfront, key) : s3_file.public_url),
         "is_folder" => is_dir,
         "size" => is_dir ? 0 : s3_file.size.round(2),
         "format" => is_dir ? 'folder' : self.class.get_file_format(key),
@@ -73,9 +82,9 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
   # return: (AWS Bucket object)
   def bucket
     @bucket ||= lambda{
-      config = Aws.config.update({ region: @current_site.get_option("filesystem_region", 'us-west-2'), credentials: Aws::Credentials.new(@current_site.get_option("filesystem_s3_access_key"), @current_site.get_option("filesystem_s3_secret_key")) })
+      config = Aws.config.update({ region: @aws_region, credentials: Aws::Credentials.new(@aws_akey, @aws_asecret) })
       s3 = Aws::S3::Resource.new
-      bucket = s3.bucket(@current_site.get_option("filesystem_s3_bucket_name"))
+      bucket = s3.bucket(@aws_bucket)
     }.call
   end
 end
