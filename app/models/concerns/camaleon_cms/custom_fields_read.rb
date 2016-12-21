@@ -71,7 +71,7 @@ module CamaleonCms::CustomFieldsRead extend ActiveSupport::Concern
   # get custom field values
   # _key: custom field key
   def get_field_values(_key, group_number = 0)
-    self.field_values.where(custom_field_slug: _key, group_number: group_number).pluck(:value)
+    field_values.loaded? ? field_values.select{|f| f.custom_field_slug == key && f.group_number == group_number}.map{|f| f.value } : field_values.where(custom_field_slug: _key, group_number: group_number).pluck(:value)
   end
   alias_method :get_fields, :get_field_values
 
@@ -95,8 +95,9 @@ module CamaleonCms::CustomFieldsRead extend ActiveSupport::Concern
     field_values.where(custom_field_slug: field_keys).order(group_number: :asc).group_by(&:group_number).each do |group_number, group_fields|
       group = {}
       field_keys.each do |field_key|
-        group[field_key] = []
-        group_fields.each{ |field| group[field_key] << field.value if field_key == field.custom_field_slug }
+        _tmp = []
+        group_fields.each{ |field| _tmp << field.value if field_key == field.custom_field_slug }
+        group[field_key] = _tmp if _tmp.present?
       end
       res << group
     end
@@ -169,7 +170,7 @@ module CamaleonCms::CustomFieldsRead extend ActiveSupport::Concern
   def add_custom_field_to_default_group(item, options, kind = "Post")
     g = get_field_groups(kind).where(slug: "_default").first
     g = add_custom_field_group({name: "Default Field Group", slug: "_default"}, kind) unless g.present?
-    f = g.add_manual_field(item, options)
+    g.add_manual_field(item, options)
   end
   alias_method :add_field, :add_custom_field_to_default_group
 

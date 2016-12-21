@@ -88,7 +88,7 @@ class CamaleonCms::SiteDecorator < CamaleonCms::TermTaxonomyDecorator
   # return the user object with id or username = id_or_username from this site
   def the_user(id_or_username)
     return object.users.where(id: id_or_username).first.decorate rescue nil if id_or_username.is_a?(Integer)
-    return object.users.find_by_username(id_or_username).decorate rescue nil if id_or_username.is_a?(String)
+    return object.users.by_username(id_or_username).first.decorate rescue nil if id_or_username.is_a?(String)
   end
 
   # return all post types for this site
@@ -133,7 +133,7 @@ class CamaleonCms::SiteDecorator < CamaleonCms::TermTaxonomyDecorator
   # return the role_id of current visitor for this site
   # if the visitor was not logged in, then return -1
   def visitor_role
-    h.signin? ? h.cama_current_user.get_role(object).slug : "-1"
+    h.signin? ? h.cama_current_user.role : '-1'
   end
 
   # check if plugin_key is already installed for this site
@@ -144,23 +144,18 @@ class CamaleonCms::SiteDecorator < CamaleonCms::TermTaxonomyDecorator
   end
 
   # return root url for this site
+  # args = {skip_relative_url_root: true/false(default), as_path: true/false(default)}
   def the_url(*args)
     args = args.extract_options!
-    unless args[:as_path]
-      args[:host] = object.main_site? ? object.slug : (object.slug.include?(".") ? object.slug : "#{object.slug}.#{Cama::Site.main_site.slug}")
-      args[:port] = (args[:host].split(":")[1] rescue nil)
-      args[:host] = args[:host].split(":").first
-    end
+    args[:site] = self
+    args[:host], args[:port] = object.get_domain.to_s.split(':') if !args[:as_path] && (h.current_site rescue false) != self # fix for different site of current visited site
+    h.cama_current_site_host_port(args) unless args[:as_path]
     args[:locale] = @_deco_locale unless args.include?(:locale)
     postfix = 'url'
     postfix = 'path' if args.delete(:as_path)
     skip_relative_url_root = args.delete(:skip_relative_url_root)
-    res = begin
-      h.cama_url_to_fixed("cama_root_#{postfix}", args)
-    rescue # undefined method `host' for nil:NilClass (called from rake:tasks)
-      parms = args.except(:host, :port, :locale, :as_path)
-      "http://#{args[:host]}#{":#{args[:port]}" if args[:port].present?}#{"/#{PluginRoutes.static_system_info['relative_url_root']}" if PluginRoutes.static_system_info['relative_url_root'].present?}#{"/#{args[:locale]}" if args[:locale].present?}/#{"?#{parms.to_param}" if parms.present?}"
-    end
+    h.cama_current_site_host_port(args) unless args.keys.include?(:host)
+    res = h.cama_url_to_fixed("cama_root_#{postfix}", args)
     res = res.sub("/#{PluginRoutes.static_system_info['relative_url_root']}", '') if skip_relative_url_root && PluginRoutes.static_system_info['relative_url_root'].present?
     res
   end

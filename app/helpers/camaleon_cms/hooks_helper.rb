@@ -1,4 +1,6 @@
 module CamaleonCms::HooksHelper
+  include CamaleonCms::PluginsHelper
+  
   # execute hooks for plugin_key with action name hook_key
   # non public method
   # plugin: plugin configuration (config.json)
@@ -13,7 +15,7 @@ module CamaleonCms::HooksHelper
   # hook_key: hook key
   # params: params for hook
   def hooks_run(hook_key, params = nil)
-    PluginRoutes.enabled_apps(current_site, current_theme.slug).each do |plugin|
+    PluginRoutes.enabled_apps(current_site).each do |plugin|
       _do_hook(plugin, hook_key, params)
     end
   end
@@ -36,6 +38,7 @@ module CamaleonCms::HooksHelper
         else
           send(hook, params)
         end
+        Rails.logger.debug "Camaleon CMS - Hook \"#{hook_key}\" executed from dependency #{plugin['key'] rescue ''}"
       rescue
         plugin_load_helpers(plugin)
         if params.nil?

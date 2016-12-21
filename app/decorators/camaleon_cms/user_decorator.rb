@@ -14,7 +14,7 @@ class CamaleonCms::UserDecorator < CamaleonCms::ApplicationDecorator
 
   # return the role title of this user for current site
   def the_role
-    object.get_role(h.current_site).name.titleize
+    object.get_role(h.current_site).try(:decorate).try(:the_title) || ''
   end
 
   # return the avatar for this user, default: assets/admin/img/no_image.jpg
@@ -34,14 +34,15 @@ class CamaleonCms::UserDecorator < CamaleonCms::ApplicationDecorator
     args[:user_name] = the_name.parameterize
     args[:user_name] = the_username unless args[:user_name].present?
     args[:locale] = get_locale unless args.include?(:locale)
-    args[:format] = "html"
+    args[:format] = args[:format] || "html"
     as_path = args.delete(:as_path)
     h.cama_url_to_fixed("cama_profile_#{as_path.present? ? "path" : "url"}", args)
   end
 
   # return the url for the profile in the admin module
   def the_admin_profile_url
-    h.cama_admin_profile_url(object.id)
+    args = h.cama_current_site_host_port({})
+    h.cama_admin_profile_url(object.id, args)
   end
 
   # return all contents created by this user in current site

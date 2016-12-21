@@ -20,7 +20,7 @@ class CamaleonCms::Admin::SessionsController < CamaleonCms::CamaleonController
     data_user = user_permit_data
     cipher = Gibberish::AES::CBC.new(cama_get_session_id)
     data_user[:password] = cipher.decrypt(data_user[:password]) rescue nil
-    @user = current_site.users.find_by_username(data_user[:username])
+    @user = current_site.users.by_username(data_user[:username]).first
     captcha_validate = captcha_verify_if_under_attack("login")
     r = {user: @user, params: params, password: data_user[:password], captcha_validate: captcha_validate, stop_process: false}; hooks_run("user_before_login", r)
     return if r[:stop_process] # permit to redirect for data completion
@@ -28,12 +28,14 @@ class CamaleonCms::Admin::SessionsController < CamaleonCms::CamaleonController
       #Email validation if is necessary
       if @user.is_valid_email? || !current_site.need_validate_email?
         cama_captcha_reset_attack("login")
-        r={user: @user, redirect_to: nil}; hooks_run('after_login', r)
+        r={user: @user, redirect_to: params[:format] == 'json' ? false : nil}; hooks_run('after_login', r)
         login_user(@user, params[:remember_me].present?, r[:redirect_to])
+        render(json: flash.discard.to_hash) if params[:format] == 'json'
+        return
       else
         flash[:error] = t('camaleon_cms.admin.login.message.email_not_validated')
         @user = current_site.users.new(data_user)
-        login
+        login if params[:format] != 'json'
       end
     else
       cama_captcha_increment_attack("login")
@@ -43,12 +45,18 @@ class CamaleonCms::Admin::SessionsController < CamaleonCms::CamaleonController
         flash[:error] = t('camaleon_cms.admin.login.message.invalid_caption')
       end
       @user = current_site.users.new(data_user)
-      login
+      login if params[:format] != 'json'
     end
+    render(json: flash.discard.to_hash) if params[:format] == 'json'
   end
 
   def logout
-    cama_logout_user
+    if session[:parent_auth_token].present? && cama_sign_in?
+      session_back_to_parent(cama_admin_dashboard_path)
+    else
+      cama_logout_user
+    end
+
   end
 
 

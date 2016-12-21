@@ -58,7 +58,7 @@ class CamaleonCms::PostDecorator < CamaleonCms::ApplicationDecorator
   def the_url(*args)
     args = args.extract_options!
     args[:locale] = get_locale unless args.include?(:locale)
-    args[:format] = "html"
+    args[:format] = args[:format] || "html"
     args[:slug] = the_slug(args[:locale])
     p = args.delete(:as_path).present? ? "path" : "url"
     l = _calc_locale(args[:locale])
@@ -124,7 +124,8 @@ class CamaleonCms::PostDecorator < CamaleonCms::ApplicationDecorator
 
   # return edit url for this post
   def the_edit_url
-    h.edit_cama_admin_post_type_post_url(object.post_type.id, object)
+    args = h.cama_current_site_host_port({})
+    h.edit_cama_admin_post_type_post_url(object.post_type.id, object, args)
   end
 
   # create the html link with edit link

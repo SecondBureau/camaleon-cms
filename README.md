@@ -1,15 +1,26 @@
 ![](https://img.shields.io/badge/Rails-4%2B-green.svg)
 ![](https://img.shields.io/badge/Ruby-1.9.3%2B-green.svg)
-![](https://img.shields.io/badge/Mysql-100%-green.svg)
-![](https://img.shields.io/badge/Sqlite-100%-green.svg)
-![](https://img.shields.io/badge/Postgres-100%-green.svg)
-![](https://img.shields.io/badge/Tests-In_Progress-red.svg)
-![](https://img.shields.io/badge/Docs-90%-orange.svg)
+![](https://img.shields.io/badge/SQLITE-100%25-green.svg)
+![](https://img.shields.io/badge/Mysql-100%25-green.svg)
+![](https://img.shields.io/badge/Postgres-100%25-green.svg)
+![](https://img.shields.io/badge/TDD-70%25-yellowgreen.svg)
+![](https://img.shields.io/badge/DOCS-60%25-yellow.svg)
 ![](https://img.shields.io/badge/Support-Inmediate-green.svg)
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/owen2345/Camaleon-CMS-Sample)
-# CAMALEON CMS V2
 ![](http://camaleon.tuzitio.com/media/132/logo2.png)
+
+# CAMALEON CMS V2
+[Website](http://camaleon.tuzitio.com/)
+
+[Demonstration](http://camaleon.tuzitio.com/plugins/demo_manage/)
+
+  
+# Sponsor
+
+[ButterCMS](https://buttercms.com/?utm_source=github&utm_medium=sponsorship-link&utm_campaign=camaleon) is an API-based CMS and blogging platform built for developers:
+
+[![Foo](https://dl.dropboxusercontent.com/u/598519/buttercms-banners/b-on-y.png)](https://buttercms.com/?utm_source=github&utm_medium=sponsorship-banner&utm_campaign=camaleon)
+
 
 # Requirements
 * Rails 4.1+
@@ -28,7 +39,7 @@
 * Add the gem in your Gemfile
 
   ```
-  gem "camaleon_cms",  '>=2.3.6' # Stable versions 2.2.1, 2.1.1, 2.1.0
+  gem "camaleon_cms",  '>= 2.4.1' # Stable versions 2.3.6, 2.2.1, 2.1.1, 2.1.0
   # gem "camaleon_cms", github: 'owen2345/camaleon-cms' # current development version
   ```
 * Only Rails 5 support
@@ -36,6 +47,7 @@
   Add in your Gemfile
   ```
   gem 'activemodel-serializers-xml', git: 'https://github.com/rails/activemodel-serializers-xml'
+  gem 'draper', github: 'audionerd/draper', branch: 'rails5'
   ```
   Create a file "lib/rails/test_unit/sub_test_task.rb" in your project (draper patch)
   ```
@@ -80,7 +92,7 @@ http://camaleon.tuzitio.com/store/plugins
 ## Camaleon CMS is FREE and Open source
 It was released on July, 2015 and tested previously with more than 20 projects by 6 months and on august 22, 2015 was published as a gem.
 
-![](http://camaleon.tuzitio.com/media/132/multi-language.png)
+![](screenshot.png)
 
 ## With Camaleon you can do:
 * Multiples sites in the same installation
@@ -152,6 +164,18 @@ http://camaleon.tuzitio.com/license.html
 * Create/Update Manuals
 * TDD (rspec)
 
+## Testing
+* Init DB
+```
+RAILS_ENV=test bundle exec rake app:db:migrate
+RAILS_ENV=test bundle exec rake app:db:test:prepare
+```
+* Configure/Install Poltergaist and change your phanthomjs path in spec/spec_helper.rb
+
+* Run testing
+```
+rspec
+```
 
 ## Contributing
 * Fork it.

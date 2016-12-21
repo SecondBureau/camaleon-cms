@@ -1,5 +1,5 @@
 // build custom field groups with values recovered from DB received in field_values
-function build_custom_field_group(field_values, group_id, fields_data, is_repeat){
+function build_custom_field_group(field_values, group_id, fields_data, is_repeat, field_name_group){
     if(field_values.length == 0) field_values = [{}];
     var group_panel = $('#custom_field_group_'+group_id);
     var group_panel_body = group_panel.find(' > .panel-body');
@@ -9,7 +9,7 @@ function build_custom_field_group(field_values, group_id, fields_data, is_repeat
 
     function add_group(values){
         var clone = group_clone.clone();
-        clone.find('input, textarea, select').not('.code_style').each(function(){ $(this).attr('name', $(this).attr('name').replace('field_options', 'field_options['+field_group_counter+']')) });
+        clone.find('input, textarea, select').not('.code_style').each(function(){ $(this).attr('name', $(this).attr('name').replace(field_name_group, field_name_group+'['+field_group_counter+']')) });
         group_panel_body.append(clone);
         group_panel.trigger('update_custom_group_number');
         for(var k in fields_data){
@@ -61,23 +61,35 @@ function cama_build_custom_field(panel, field_data, values){
             field.prepend(field_actions);
             if(field_counter == 0) field.children('.actions').find('.fa-times').remove();
         }
-        if(!$field.find('.group-input-fields-content').hasClass('cama_skip_cf_rename_multiple')) field.find('input, textarea, select').each(function(){ $(this).attr('name', $(this).attr('name').replace('[]', '['+field_counter+']')) });
+        if(!$field.find('.group-input-fields-content').hasClass('cama_skip_cf_rename_multiple')) {
+            field.find('input, textarea, select').each(function(){ $(this).attr('name', $(this).attr('name').replace('[]', '['+field_counter+']')) });
+        }
         if(field_data.disabled){
             field.find('input, textarea, select').prop('readonly', true).filter('select').click(function(){ return false; }).focus(function(){ $(this).blur(); });
             field.find('.btn').addClass('disabled').unbind().click(function(){ return false; });
         }
 
-        if(value) field.find('.input-value').val(value);
+        if (field_data.kind == 'checkbox') {
+            field.find('input')[0].checked = value;
+        } else if (value) {
+            field.find('.input-value').val(value).trigger('change', {field_rendered: true});
+        }
         $sortable.append(field);
         if(callback) eval(callback + "(field, value);");
         field_counter ++;
     }
-    if(values.length <= 0) values = [field_data.default_value];
+    if(field_data.kind != 'checkbox' && values.length <= 0) {
+        values = [field_data.default_value];
+    }
     if(field_data.kind != 'checkboxes') {
         if (!field_data.multiple && values.length > 1) values = [values[0]];
-        $.each(values, function (i, value) {
-            add_field(value);
-        });
+        if (field_data.kind == 'checkbox') {
+            add_field(values[0]);
+        } else {
+            $.each(values, function (i, value) {
+                add_field(value);
+            });
+        }
     } else add_field(values);
 
     if(field_data.multiple){ // sortable actions
@@ -220,10 +232,17 @@ function load_upload_image_field($input) {
         versions: $input.attr("data-versions") || '',
         thumb_size: $input.attr("data-thumb_size") || '',
         selected: function (file, response) {
-            $input.val(file.url);
+            $input.val(file.url).trigger('change');
         }
     });
 }
+
+// permit to show preview image of image custom fields
+function cama_custom_field_image_changed(field){
+    if(field.val()) field.closest('.input-group').append('<span class="input-group-addon custom_field_image_preview"><a href="'+field.val()+'" target="_blank"><img src="'+field.val()+'" style="width: 50px; height: 20px;"></a></span>')
+    else field.closest('.input-group').find('.custom_field_image_preview').remove();
+}
+
 function load_upload_video_field(thiss) {
     var $input = $(thiss).prev();
     $.fn.upload_filemanager({

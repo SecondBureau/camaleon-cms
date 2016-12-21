@@ -152,10 +152,7 @@
       width: 30px;
     }
   }
-  ul {
-    padding: 0;
-    list-style: none;
-  }
+
   // translations
   .trans_panel {
     .nav-tabs .has-error {
@@ -236,6 +233,8 @@ div.mce-fullscreen{
 
 //************** custom loading style
 #cama_custom_loading{
+  position: relative;
+  z-index: 999999;
   .back_spinner{
     position: fixed;
     z-index: 99998;

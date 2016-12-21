@@ -18,7 +18,7 @@ class CamaleonCms::Admin::Posts::DraftsController < CamaleonCms::Admin::PostsCon
     if @post_draft.save(:validate => false)
       @post_draft.set_params(params[:meta], params[:field_options], @post_data[:keywords])
       msg = {draft: {id: @post_draft.id}, _drafts_path: cama_admin_post_type_draft_path(@post_type.id, @post_draft)}
-      r = {post: @post_draft, post_type: ""}; hooks_run("created_post_draft", r)
+      r = {post: @post_draft, post_type: @post_type}; hooks_run("created_post_draft", r)
     else
       msg = {error: @post_draft.errors.full_messages}
     end
@@ -29,10 +29,10 @@ class CamaleonCms::Admin::Posts::DraftsController < CamaleonCms::Admin::PostsCon
   def update
     @post_draft = CamaleonCms::Post.drafts.find(params[:id])
     @post_draft.attributes = @post_data
-    r = {post: @post_draft, post_type: @post_type}; hooks_run("update_post", r)
+    r = {post: @post_draft, post_type: @post_type}; hooks_run("update_post_draft", r)
     if @post_draft.save(validate: false)
       @post_draft.set_params(params[:meta], params[:field_options], params[:options])
-      hooks_run("updated_post_draft", {post: @post_draft, post_type: ""})
+      hooks_run("updated_post_draft", {post: @post_draft, post_type: @post_type})
       msg = {draft: {id: @post_draft.id}}
     else
       msg = {error: @post_draft.errors.full_messages}
@@ -46,6 +46,8 @@ class CamaleonCms::Admin::Posts::DraftsController < CamaleonCms::Admin::PostsCon
   private
   def set_post_data_params
     post_data = params.require(:post).permit!
+    post_data.delete(:created_at) unless params[:post][:created_at].present?
+    post_data.delete(:updated_at) unless params[:post][:updated_at].present?
     post_data[:status] = 'draft'
     post_data[:post_parent] = params[:post_id]
     post_data[:user_id] = cama_current_user.id unless post_data[:user_id].present?

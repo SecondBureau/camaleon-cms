@@ -1,4 +1,4 @@
-<% (files rescue {file['name'] => file}).each do |k, file| next if @media_formats.present? && !@media_formats.include?(file["format"]) && !@media_formats.include?(file["url"].split('.').last) %>
+<% files.each do |file| next if @media_formats.present? && !@media_formats.include?(file["format"]) && !@media_formats.include?(file["url"].split('.').last) %>
     <% file['url'] = download_private_file_cama_admin_media_url(file: file[:url]) if params[:private].present? %>
     <div class="media_item file_item <%= file["format"] %>_format" data-key="<%= file["name"] %>">
         <div class="thumb">
@@ -22,10 +22,13 @@
             <%= file["name"] %>
         </div>
         <textarea class="hidden data_value"><%= raw file.to_json %></textarea>
-        <% if @show_file_actions %>
-            <div class="actions">
+        <div class="actions">
+            <% if file['format'] == 'image' && File.extname(file['name']).downcase != '.gif' %>
+                <a href="#" class="edit_item btn btn-primary btn-xs" <%= 'data-permit-overwrite="true"' if @show_file_actions %>><i class="fa fa-pencil"></i></a>
+            <% end %>
+            <% if @show_file_actions %>
                 <a href="#" class="del_item btn btn-danger btn-xs"><i class="fa fa-trash"></i></a>
-            </div>
-        <% end %>
+            <% end %>
+        </div>
     </div>
 <% end %>

@@ -5,6 +5,7 @@ en:
       button:
         add_new_path: 'Add new path'
       custom_url_paths: 'Custom url paths'
+      custom_url_samples: 'Enter paths/urls like /contact or /my_section?p=a&... or /static-pages/(.*) or /test-([0-9]+)/?\?owen=true&var2=([a-z]+) or http://static.mydomain.com/(.*)'
       clean_cache: 'Clean cache'
       title: 'Frontend cache pages'
       home_page: 'Home Page'
@@ -113,3 +114,23 @@ it:
         settings_saved: 'Impostazioni salvate!'
         cache_destroyed: 'Cache distrutta!'
       settings: 'Impostazioni'
+
+zh-CN:
+  plugin:
+    front_cache:
+      button:
+        add_new_path: '添加新路径'
+      custom_url_paths: '自定义链接路径'
+      clean_cache: '清除缓存'
+      title: '字体缓存页面'
+      home_page: '主页'
+      pages: '页面'
+      pages_of: '页'
+      skip_cache_pages: '跳过缓存页面'
+      message:
+        please_checkpost_need_cache: '请检查您需要缓存位内容.'
+        enabled_cache_inner_content_logged_users: '为已登录的用户启用内部内容的缓存'
+        settings_saved: '设置已保存!'
+        cache_destroyed: '缓存已清楚!'
+      settings: '设置'
+

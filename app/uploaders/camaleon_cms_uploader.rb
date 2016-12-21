@@ -18,10 +18,14 @@ class CamaleonCmsUploader
   # return all files structure, within folder prefix
   # return json like:
   # {files: {'file_name': {'name'=> 'a.jpg', key: '/test/a.jpg', url: '', url: '', size: '', format: '', thumb: 'thumb_url', type: '', created_at: '', dimension: '120x120'}}, folders: {'folder name' => {name: 'folder name', key: '/folder name', ...}}}
-  def objects(prefix = '/')
+  # sort: (String, default 'created_at'), accept for: created_at | name | size | type | format
+  def objects(prefix = '/', sort = 'created_at')
     prefix = "/#{prefix}" unless prefix.starts_with?('/')
     db = @current_site.get_meta(cache_key, nil) || browser_files
-    db[prefix.gsub('//', '/')] || {files: {}, folders: {}}
+    res = db[prefix.gsub('//', '/')] || {files: {}, folders: {}}
+    res[:files] = res[:files].sort_by{|k, v| v[sort] }.reverse.to_h
+    res[:folders] = res[:folders].sort_by{|k, v| v['name'] }.reverse.to_h
+    res
   end
 
   # clean cached of files structure saved into DB
@@ -56,7 +60,7 @@ class CamaleonCmsUploader
 
     s = prefix.split('/').clean_empty
     return file_parsed if s.last == 'thumb'
-    s.each_with_index{|_s, i| k = "/#{File.join(s.slice(0, i), _s)}"; cache_item(file_parse(k), objects_db) unless objects_db[k].present? } unless ['/', '', '.'].include?(prefix)
+    s.each_with_index{|_s, i| k = "/#{File.join(s.slice(0, i), _s)}".cama_fix_slash; cache_item(file_parse(k), objects_db) unless objects_db[k].present? } unless ['/', '', '.'].include?(prefix)
 
     objects_db[prefix] = {files: {}, folders: {}} if objects_db[prefix].nil?
     if file_parsed['format'] == 'folder'
@@ -120,7 +124,7 @@ class CamaleonCmsUploader
   def self.validate_file_format(key, valid_formats = "*")
     return true if valid_formats == "*" || !valid_formats.present?
     valid_formats = valid_formats.gsub(' ', '').downcase.split(',') + get_file_format_extensions(valid_formats).split(',')
-    valid_formats.include?(File.extname(key).sub(".", "").downcase)
+    valid_formats.include?(File.extname(key).sub(".", "").split('?').first.downcase)
   end
 
 

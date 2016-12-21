@@ -22,7 +22,7 @@ module CamaleonCms::FrontendConcern extend ActiveSupport::Concern
   def rss
     r = {layout: false, render: "rss"}
     hooks_run("on_render_rss", r)
-    render r[:render], layout: r[:layout]
+    render r[:render], layout: r[:layout], formats: [:rss]
   end
 
   # save comment from a post
@@ -50,14 +50,12 @@ module CamaleonCms::FrontendConcern extend ActiveSupport::Concern
       @comment = params[:post_comment][:parent_id].present? ? @post.comments.find_by_id(params[:post_comment][:parent_id]).children.new(comment_data) :  @post.comments.main.new(comment_data)
       if @comment.save
         flash[:notice] = t('camaleon_cms.admin.comments.message.created')
-        redirect_to :back
       else
         flash[:error] = "#{t('camaleon_cms.common.comment_error', default: 'An error was occurred on save comment')}:<br> #{@comment.errors.full_messages.join(', ')}"
-        redirect_to :back
       end
     else
       flash[:error] = t('camaleon_cms.admin.message.unauthorized')
-      redirect_to :back
     end
+    params[:format] == 'json' ? render(json: flash.discard.to_hash) : redirect_to(:back)
   end
 end

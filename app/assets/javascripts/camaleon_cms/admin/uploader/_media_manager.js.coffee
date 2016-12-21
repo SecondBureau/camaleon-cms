@@ -1,13 +1,19 @@
 window["cama_init_media"] = (media_panel) ->
   media_info = media_panel.find(".media_file_info")
+  media_files_panel = media_panel.find(".media_browser_list")
   media_info_tab_info = media_panel.find(".media_file_info_col .nav-tabs .link_media_info")
   media_link_tab_upload = media_panel.find(".media_file_info_col .nav-tabs .link_media_upload")
 
   ################ visualize item
-  show_file = (item) ->
-    item.addClass('selected').siblings().removeClass('selected')
+  # return the data of this file
+  file_data = (item)->
     data = item.data('eval-data') || eval("("+item.find(".data_value").val()+")")
     item.data('eval-data', data)
+    return data
+
+  show_file = (item) ->
+    item.addClass('selected').siblings().removeClass('selected')
+    data = file_data(item)
     media_info_tab_info.click()
     tpl =
       "<div class='p_thumb'></div>" +
@@ -33,14 +39,17 @@ window["cama_init_media"] = (media_panel) ->
         if media_panel.attr("data-dimension") # verify dimensions
           btn = media_info.find(".p_footer .insert_btn")
           btn.prop('disabled', true)
-          _ww = parseInt(media_panel.attr("data-dimension").split("x")[0])
-          _hh = parseInt(media_panel.attr("data-dimension").split("x")[1])
+          _ww = parseInt(media_panel.attr("data-dimension").split("x")[0]) || ww
+          _hh = parseInt(media_panel.attr("data-dimension").split("x")[1]) || hh
+          media_info.find('.cdimension').append("<span style='color: black;'> ==> "+media_panel.attr("data-dimension")+"</span>")
           if _ww == ww && _hh == hh
             btn.prop('disabled', false)
           else
             media_info.find(".cdimension").css("color", 'red')
             cut = $("<button class='btn btn-info pull-right'><i class='fa fa-crop'></i> "+I18n("button.crop_image")+"</button>").click(->
-              $.fn.upload_url({url: data["url"]})
+              crop_name = data["name"].split('.')
+              crop_name[crop_name.length-2] += '_' + media_panel.attr("data-dimension")
+              $.fn.upload_url({url: data["url"], name: crop_name.join('.')})
             )
             btn.after(cut)
 
@@ -65,6 +74,15 @@ window["cama_init_media"] = (media_panel) ->
   media_panel.on("click", ".file_item", ->
     show_file($(this))
     return false
+  ).on('dblclick', '.file_item', -> ## auto select on double click
+    btn = media_info.find('.insert_btn')
+    if btn && !btn.attr('disabled') && !btn.attr('readonly')
+      btn.trigger('click')
+  )
+
+  media_files_panel.scroll(->
+    if media_files_panel.attr('data-next-page') && $(this).scrollTop() + $(this).outerHeight() == $(this)[0].scrollHeight
+      media_panel.trigger('navigate_to', {paginate: true, custom_params: {page: media_files_panel.attr('data-next-page')}})
   )
   # end visualize item
 
@@ -131,37 +149,45 @@ window["cama_init_media"] = (media_panel) ->
       media_panel.attr("data-folder", data["folder"])
     folder = media_panel.attr("data-folder")
     media_panel.trigger("update_breadcrumb")
-    media_info.html("")
-    media_link_tab_upload.click()
+    req_params = cama_media_get_custom_params({partial: true, folder: folder})
+    if data["paginate"]
+      req_params = media_panel.data('last_req_params') || req_params
+    else
+      media_info.html("")
+      media_link_tab_upload.click()
 
+    media_panel.data('last_req_params', $.extend({}, req_params, data['custom_params'] || {}))
     showLoading()
-    $.get(media_panel.attr("data-url"), cama_media_get_custom_params({partial: true, folder: folder}), (res)->
-      media_panel.find(".media_browser_list").html(res)
+    $.getJSON(media_panel.attr("data-url"), media_panel.data('last_req_params'), (res)->
+      if data["paginate"]
+        if media_files_panel.children('.file_item').length > 0
+          media_files_panel.append(res.html)
+        else
+          last_folder = media_files_panel.children('.folder_item:last')
+          if last_folder.length ==1 then last_folder.after(res.html) else  media_files_panel.append(res.html)
+      else
+        media_files_panel.html(res.html)
+      media_files_panel.attr('data-next-page', res.next_page)
       hideLoading()
     )
   ).bind("add_file", (e,  data)-> # add html item in the list
-    item = $(data["item"])
-    media_panel.find(".media_browser_list").prepend(item)
+    item = $(data["item"]).hide()
+    last_folder = media_files_panel.children('.folder_item:last')
+    if last_folder.length ==1 then last_folder.after(item) else media_files_panel.prepend(item)
     if data["selected"] == true || data["selected"] == undefined
       item.click()
+    media_files_panel.scrollTop(0)
+    item.fadeIn(1500)
   )
 
   # search file
   media_panel.find('#cama_search_form').submit ->
-    showLoading()
-    $.get(media_panel.attr("data-url"), cama_media_get_custom_params({search: $(this).find('input:text').val(), partial: true}), (res)->
-      media_panel.find(".media_browser_list").html(res)
-      hideLoading()
-    )
+    media_panel.trigger('navigate_to', {custom_params: {search: $(this).find('input:text').val()}})
     return false
 
   # reload current directory
-  media_panel.find('.cam_media_reload').click (e)->
-    showLoading()
-    $.get(media_panel.attr("data-url"), cama_media_get_custom_params({partial: true, cama_media_reload: $(this).attr('data-action')}), (res)->
-      media_panel.find(".media_browser_list").html(res)
-      hideLoading()
-    )
+  media_panel.find('.cam_media_reload').click (e, data)->
+    media_panel.trigger('navigate_to', {custom_params:{cama_media_reload: $(this).attr('data-action')}})
     e.preventDefault()
 
   # element actions
@@ -181,7 +207,7 @@ window["cama_init_media"] = (media_panel) ->
           hideLoading()
           modal.modal("hide")
           if res.search("folder_item") >= 0 # success upload
-            media_panel.find(".media_browser_list").append(res)
+            media_files_panel.append(res)
           else
             $.fn.alert({type: 'error', content: res, title: "Error"})
         )
@@ -207,6 +233,127 @@ window["cama_init_media"] = (media_panel) ->
     ).error(->
       $.fn.alert({type: 'error', content: I18n("msg.internal_error"), title: I18n("button.error")})
     )
+    return false
+  )
+
+  # edit image
+  media_panel.on('click', '.edit_item', ->
+    link = $(this)
+    item = link.closest(".media_item")
+    data = file_data(item)
+    cropper = null
+    cropper_data = null
+
+    edit_callback = (modal)->
+      field_width = modal.find('.export_image .with_image')
+      field_height = modal.find('.export_image .height_image')
+      save_image = (name, same_name)->
+        $.fn.upload_url({url: cropper.cropper('getCroppedCanvas', { width: field_width.val(), height: field_height.val() }).toDataURL('image/jpeg'), name: name, same_name: same_name, callback: (res)->
+          modal.modal('hide')
+        })
+
+      # add buttons
+      for icon, cmd of {arrows: "('setDragMode', 'move')", crop: "('setDragMode', 'crop')", 'search-plus': "('zoom', 0.1)", 'search-minus': "('zoom', -0.1)", 'arrow-left': "('move', -10, 0)", 'arrow-right': "('move', 10, 0)", 'arrow-up': "('move', 0, -10)", 'arrow-down': "('move', 0, 10)", 'rotate-left': "('rotate', -45)", 'rotate-right': "('rotate', 45)", 'arrows-h': "('scaleX', -1)", 'arrows-v': "('scaleY', -1)", refresh: "('reset')"}
+        btn = $('<button type="button" class="btn btn-default" data-cmd="'+cmd+'"><i class="fa fa-'+icon+'"></i></button>')
+        modal.find('.editor_controls').append(btn)
+        btn.click(->
+          btn = $(this)
+          cmd = btn.data('cmd')
+          if cmd == "('scaleY', -1)" || cmd == "('scaleX', -1)"
+            btn.data('cmd', cmd.replace('-1', '1'))
+          else if cmd == "('scaleY', 1)" || cmd == "('scaleX', 1)"
+            btn.data('cmd', cmd.replace('1', '-1'))
+          eval('cropper.cropper'+cmd)
+          if cmd == "('reset')"
+            cropper.cropper('setData', cropper_data['data'])
+        )
+
+      # save editted image
+      save_btn = modal.find('.export_image .save_image').click(->
+        save_buttons = (modal2)->
+          modal2.find('img.preview').attr('src', cropper.cropper('getCroppedCanvas', { width: field_width.val(), height: field_height.val() }).toDataURL('image/jpeg'))
+          modal2.find('.save_btn').click(->
+            save_image(data['name'], true)
+            modal2.modal('hide')
+            item.remove()
+          )
+          modal2.find('form').validate({submitHandler: ->
+            save_image(modal2.find('.file_name').val()+'.'+data['name'].split('.').pop())
+            modal2.modal('hide')
+            return false
+          })
+        open_modal({zindex: 999992, modal_size: 'modal-lg', id: 'media_preview_editted_image', content: '<div class="text-center" style="overflow: auto;"><img class="preview"></div><br><div class="row"><div class="col-md-4">'+(if link.attr('data-permit-overwrite') then '<button class="btn save_btn btn-default">'+I18n('button.replace_image')+'</button>' else '')+'</div><div class="col-md-8"><form class="input-group"><input type="text" class="form-control file_name required" name="file_name"><div class="input-group-btn"><button class="btn btn-primary" type="submit">'+I18n('button.save_new_image')+'</button></div></form></div></div>', callback: save_buttons})
+      )
+
+      # custom sizes auto calculate aspect ratio
+      field_width.change(->
+        unless field_width.attr("readonly")
+          croper_area = modal.find('.cropper-crop-box')
+          field_height.val(parseInt((parseInt($(this).val()) / croper_area.width())*croper_area.height()))
+      )
+
+      # show cropper image
+      showLoading()
+      modal.find('img.editable').load(->
+        setTimeout(->
+          label = modal.find('.label_dimension')
+          cropper_data = {data: {}, minContainerHeight: 450, modal: true, crop: (e)->
+            label.html(Math.round(e.width) + " x "+Math.round(e.height))
+            unless field_width.attr("readonly")
+              field_width.val(Math.round(e.width))
+            unless field_height.attr("readonly")
+              field_height.val(Math.round(e.height))
+          , built: ()->
+            if modal.find('.cropper-canvas img').attr('crossorigin')
+              modal.find('.modal-body').html('<div class="alert alert-danger">'+I18n('msg.cors_error', 'Please verify the following: <ul><li>If the image exist: %{url_img}</li> <li>Check if cors configuration are defined well, only for external images: S3, cloudfront(if you are using cloudfront).</li></ul><br> More information about CORS: <a href="%{url_blog}" target="_blank">here.</a>', {url_img: data['url'], url_blog: 'http://blog.celingest.com/en/2014/10/02/tutorial-using-cors-with-cloudfront-and-s3/'})+'</div>')
+          }
+
+          if media_panel.attr("data-dimension") # TODO: control dimensions
+            dim = media_panel.attr("data-dimension").split('x')
+            if dim[0]
+              cropper_data['data']['width'] = parseFloat(dim[0].match(/\d+/)[0])
+              field_width.val(cropper_data['data']['width'])
+              if dim[0].search(/\?/) > -1
+                field_width.attr('min', cropper_data['data']['width'])
+              else
+                field_width.prop('readonly', true)
+            if dim[1]
+              cropper_data['data']['height'] = parseFloat(dim[1].match(/\d+/)[0])
+              field_height.val(cropper_data['data']['height'])
+              if dim[1].search(/\?/) > -1
+                field_height.attr('min', cropper_data['data']['height'])
+              else
+                field_height.prop('readonly', true)
+            if dim[0] && dim[0].search(/\?/) == -1 && dim[1] && dim[1].search(/\?/) == -1
+              cropper_data['cropBoxResizable'] = false
+
+          cropper = modal.find('img.editable').cropper(cropper_data)
+          hideLoading()
+        , 300)
+      )
+    open_modal({
+      zindex: 999991,
+      id: 'media_panel_editor_image',
+      title: 'Edit Image - ' + data['name'],
+      content: '<div>' +
+                '<div class="editable_wrapper">' +
+                  '<img style="max-width: 100%;" class="editable" id="media_editable_image" src="'+data['url']+'">' +
+                '</div>' +
+                '<div class="row" style="margin-top: 5px;">' +
+                  '<div class="col-md-8">' +
+                    '<div class="editor_controls btn-group"></div>' +
+                  '</div>' +
+                  '<div class="col-md-4">' +
+                    '<div class="input-group export_image"> ' +
+                      '<input class="form-control with_image" placeholder="Width"><span class="input-group-addon">x</span>' +
+                      '<input class="form-control height_image" placeholder="Height"> ' +
+                      '<span class="input-group-btn"><button class="btn btn-primary save_image" type="button"><i class="fa fa-save"></i> '+I18n('button.save', 'Save Image')+'</button> </span> ' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+                '<!--span class="label label-default pull-right label_dimension"></span-->' +
+              '</div>',
+      callback: edit_callback, modal_size: 'modal-lg'})
     return false
   )
 
@@ -255,7 +402,7 @@ $ ->
     )
 
 
-# jquery library for modal updaloder
+# jquery library for modal uploader
 $ ->
   # sample: $.fn.upload_filemanager({title: "My title", formats: "image,video", dimension: "30x30", versions: '100x100,200x200', thumb_size: '100x100', selected: function(file){ alert(file["name"]) }})
   # file structure: {"name":"422.html","size":1547, "url":"http://localhost:3000/media/1/422.html", "format":"doc","type":"text/html"}
@@ -263,6 +410,15 @@ $ ->
   # private: (boolean) if true => browser private files that are not possible access by public url
   $.fn.upload_filemanager = (args)->
     args = args || {}
+    if args["formats"] == 'null'
+      args["formats"] = ''
+    if args["dimension"] == 'null'
+      args["dimension"] = ''
+    if args["versions"] == 'null'
+      args["versions"] = ''
+    if args["thumb_size"] == 'null'
+      args["thumb_size"] = ''
+
     open_modal({title: args["title"] || I18n("msg.media_title"), id: 'cama_modal_file_uploader', modal_size: "modal-lg", mode: "ajax", url: root_admin_url+"/media/ajax", ajax_params: {media_formats: args["formats"], dimension: args["dimension"], versions: args["versions"], thumb_size: args["thumb_size"], private: args['private'] }, callback: (modal)->
       if args["selected"]
         window["callback_media_uploader"] = args["selected"]

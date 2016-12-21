@@ -83,7 +83,7 @@ class CamaleonCms::Admin::Appearances::NavMenusController < CamaleonCms::AdminCo
     parent_id = params[:nav_menu_id] if parent_id.nil?
     items.each do |index, _item|
       item = current_site.nav_menu_items.find(_item['id'])
-      item.update_columns parent_id: parent_id, term_order: index
+      item.update(parent_id: parent_id, term_order: index)
       reorder_items(_item['children'], _item['id'], false) if _item['children'].present?
     end
     render(inline: '') if is_root
@@ -138,7 +138,7 @@ class CamaleonCms::Admin::Appearances::NavMenusController < CamaleonCms::AdminCo
           false
       end
     rescue => e
-      puts "@@@@@@@@@@@@@@@@@@@@@@@@@ Skipped menu for: #{e.message} (#{nav_menu_item})"
+      Rails.logger.error "Camaleon CMS - Menu Item Not Found => Skipped menu for: #{e.message} (#{nav_menu_item})"
       false
     end
   end

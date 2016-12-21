@@ -17,7 +17,7 @@ module CamaleonCms::HtmlHelper
     @_cama_assets_libraries[key][:js] += assets[:js] if assets[:js].present?
   end
 
-  # enable to load admin or registered libraries (colorpicker, datepicker, form_builder, tinymce, form_ajax, cropper)
+  # enable to load admin or registered libraries (colorpicker, datepicker, tinymce, form_ajax, cropper)
   # sample: add_asset_library("datepicker", "colorpicker")
   # This will add this assets library in the admin head or in a custom place by calling: cama_draw_custom_assets()
   def cama_load_libraries(*keys)
@@ -75,14 +75,18 @@ module CamaleonCms::HtmlHelper
     @_assets_libraries.each do |key, assets|
       libs += assets[:css] if assets[:css].present?
     end
-    css = stylesheet_link_tag *libs.uniq, media: "all"
+    stylesheets = libs.uniq
+    css = stylesheet_link_tag *stylesheets, media: "all"
 
     libs = []
     @_assets_libraries.each do |key, assets|
       libs += assets[:js] if assets[:js].present?
     end
-    js = javascript_include_tag *libs.uniq
-    css + "\n" + js + "\n" + @_assets_content.join("").html_safe
+    javascripts = libs.uniq
+    js = javascript_include_tag *javascripts
+
+    args = {stylesheets: stylesheets, javascripts: javascripts, js_html: js, css_html: css}; hooks_run('draw_custom_assets', args)
+    args[:css_html] + "\n" + args[:js_html] + "\n" + @_assets_content.join("").html_safe
   end
 
   # return category tree for category dropdown
@@ -113,9 +117,8 @@ module CamaleonCms::HtmlHelper
     libs[:datepicker] = {js: []}
     libs[:datetimepicker] = {js: [], css: []}
     libs[:tinymce] = {js: ['camaleon_cms/admin/tinymce/tinymce.min', "camaleon_cms/admin/tinymce/plugins/filemanager/plugin.min"], css: ["camaleon_cms/admin/tinymce/skins/lightgray/content.min"]}
-    libs[:form_builder] = {css:['camaleon_cms/admin/form-builder/formbuilder'],js: ['camaleon_cms/admin/form-builder/vendor', 'camaleon_cms/admin/form-builder/formbuilder' ]}
     libs[:form_ajax] = {js: ['camaleon_cms/admin/form/jquery.form']}
-    libs[:cropper] = {js: ['camaleon_cms/admin/form/cropper.min'], css: ['camaleon_cms/admin/cropper/cropper.min']}
+    libs[:cropper] = {} # loaded by default
     libs[:post] = {js: ["camaleon_cms/admin/jquery.tagsinput.min", 'camaleon_cms/admin/post'], css: ["camaleon_cms/admin/jquery.tagsinput"]}
     libs[:multiselect] = {js: ['camaleon_cms/admin/bootstrap-select.js']}
     libs[:validate] = {js: ['camaleon_cms/admin/jquery.validate']}

@@ -6,17 +6,27 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
     @aws_akey = @aws_settings[:access_key] || @current_site.get_option("filesystem_s3_access_key")
     @aws_asecret = @aws_settings[:secret_key] || @current_site.get_option("filesystem_s3_secret_key")
     @aws_bucket = @aws_settings[:bucket] || @current_site.get_option("filesystem_s3_bucket_name")
+    @aws_settings[:aws_file_upload_settings] ||= lambda{|settings| settings }
+    @aws_settings[:aws_file_read_settings] ||= lambda{|data, s3_file| data }
   end
 
   # recover all files from AWS and parse it to save into DB as cache
   def browser_files
     objects = {}
     objects['/'] = {files: {}, folders: {}}
-    bucket.objects.each do |file|
+    bucket.objects(@aws_settings["inner_folder"].present? ? {prefix: @aws_settings["inner_folder"]} : nil).each do |file|
       cache_item(file_parse(file), objects)
     end
     @current_site.set_meta(cache_key, objects)
     objects
+  end
+
+  def objects(prefix = '/', sort = 'created_at')
+    if @aws_settings["inner_folder"].present?
+      prefix = "#{@aws_settings["inner_folder"]}/#{prefix}".gsub('//', '/')
+      prefix = prefix[0..-2] if prefix.end_with?('/')
+    end
+    super(prefix, sort)
   end
 
   # parse an AWS file into custom file_object
@@ -38,10 +48,8 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
         'dimension' => ''
     }.with_indifferent_access
     res["thumb"] = version_path(res['url']) if res['format'] == 'image' && File.extname(res['name']).downcase != '.gif'
-    if res['format'] == 'image'
-      # TODO: Recover image dimension (suggestion: save dimesion as metadata)
-    end
-    res
+    # if res['format'] == 'image' # TODO: Recover image dimension (suggestion: save dimesion as metadata)
+    @aws_settings[:aws_file_read_settings].call(res, s3_file)
   end
 
   # add a file object or file path into AWS server
@@ -51,15 +59,17 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
   #   - is_thumb: true => if this file is a thumbnail of an uploaded file
   def add_file(uploaded_io_or_file_path, key, args = {})
     args, res = {same_name: false, is_thumb: false}.merge(args), nil
+    key = "#{@aws_settings["inner_folder"]}/#{key}" if @aws_settings["inner_folder"].present? && !args[:is_thumb]
     key = search_new_key(key) unless args[:same_name]
     s3_file = bucket.object(key.split('/').clean_empty.join('/'))
-    s3_file.upload_file(uploaded_io_or_file_path.is_a?(String) ? uploaded_io_or_file_path : uploaded_io_or_file_path.path, acl: 'public-read')
+    s3_file.upload_file(uploaded_io_or_file_path.is_a?(String) ? uploaded_io_or_file_path : uploaded_io_or_file_path.path, @aws_settings[:aws_file_upload_settings].call({acl: 'public-read'}))
     res = cache_item(file_parse(s3_file)) unless args[:is_thumb]
     res
   end
 
   # add new folder to AWS with :key
   def add_folder(key)
+    key = "#{@aws_settings["inner_folder"]}/#{key}" if @aws_settings["inner_folder"].present?
     s3_file = bucket.object(key.split('/').clean_empty.join('/') << '/')
     s3_file.put(body: nil)
     cache_item(file_parse(s3_file))
@@ -68,12 +78,14 @@ class CamaleonCmsAwsUploader < CamaleonCmsUploader
 
   # delete a folder in AWS with :key
   def delete_folder(key)
+    key = "#{@aws_settings["inner_folder"]}/#{key}" if @aws_settings["inner_folder"].present?
     bucket.objects(prefix: key.split('/').clean_empty.join('/') << '/').delete
     reload
   end
 
   # delete a file in AWS with :key
   def delete_file(key)
+    key = "#{@aws_settings["inner_folder"]}/#{key}" if @aws_settings["inner_folder"].present?
     bucket.object(key.split('/').clean_empty.join('/')).delete rescue ''
     reload
   end

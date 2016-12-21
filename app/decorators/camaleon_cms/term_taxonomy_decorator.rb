@@ -54,24 +54,26 @@ class CamaleonCms::TermTaxonomyDecorator < CamaleonCms::ApplicationDecorator
 
   # return edit url for current taxonomy: PostType, PostTag, Category
   def the_edit_url
-    link = ""
+    args = h.cama_current_site_host_port({})
     case object.class.name
       when "CamaleonCms::PostType"
-        link = h.edit_cama_admin_settings_post_type_url(object)
+        h.edit_cama_admin_settings_post_type_url(object, args)
       when "CamaleonCms::Category"
-        link = h.edit_cama_admin_post_type_category_url(object.post_type.id, object)
+        h.edit_cama_admin_post_type_category_url(object.post_type.id, object, args)
       when "CamaleonCms::PostTag"
-        link = h.edit_cama_admin_post_type_post_tag_url(object.post_type.id, object)
+        h.edit_cama_admin_post_type_post_tag_url(object.post_type.id, object, args)
       when "CamaleonCms::Site"
-        link = h.cama_admin_settings_site_url
+        h.cama_admin_settings_site_url(args)
+      else
+        ""
     end
-    link
   end
 
   # create the html link with edit link
   # return html link
   # attrs: Hash of link tag attributes, sample: {id: "myid", class: "sss" }
   def the_edit_link(title = nil, attrs = { })
+    return '' unless h.cama_current_user.present?
     attrs = {target: "_blank", style: "font-size:11px !important;cursor:pointer;"}.merge(attrs)
     h.link_to("&rarr; #{title || h.ct("edit", default: 'Edit')}".html_safe, the_edit_url, attrs)
   end

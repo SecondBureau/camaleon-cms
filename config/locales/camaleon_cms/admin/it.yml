@@ -1,7 +1,5 @@
 it:
-  updated_at: 'Aggiornato il'
   camaleon_cms:
-    updated_at: 'Aggiornato il'
     welcome_message: "Benvenuto su Camaleon CMS"
     admin:
       button:
@@ -173,6 +171,8 @@ it:
         media_manager: 'Media Manager'
         home: "Home"
         info: 'Info'
+        folder_name: 'Nome della cartella'
+        external: 'Esterno'
       menus:
         menus: 'Menù'
         link_url: 'Link URL'
@@ -248,6 +248,7 @@ it:
           recover: 'Ripristino...'
         permalink: 'Permalink'
       post_type:
+        route_format: 'Contenuto Formato percorso'
         all: 'Tutti'
         add: 'Aggiungi'
         add_category: 'Aggiungi categoria'
@@ -334,7 +335,7 @@ it:
         filesystem_cdn: 'CDN url'
         filesystem_thumb_size: 'Dimensione minuature [100x100]'
         filesystem_max_file_size: 'Dimensione massima dei file [MB]'
-        aws: 'Salva file in AWS3'
+        aws: 'Salva file in AWS S3'
         information_basic: 'Informazioni principali'
         theme_setting: "Impostazioni tema"
         input_only_date: 'Inserisci solo la data'
@@ -456,7 +457,6 @@ it:
         google_plus: 'Google+'
         hide: 'Nascondi'
         home_page: 'Home Page'
-        has_keywords: 'ha una parola chiave'
         id: 'ID'
         images: 'Immagini'
         import: 'Importa'
@@ -472,10 +472,10 @@ it:
         logo: 'Logo'
         manage_category: 'Gestisci Categoria'
         manage_content: 'Gestisci Contenuto'
-        manage_keywords: 'Gestisci parole chiave'
         manage_layout: 'Gestisci Layout'
         manage_parent_structure: 'Gestisci gerarchia delle pagine'
         manage_picture: 'Gestisci Immagine'
+        manage_seo: 'Gestire SEO?'
         manage_summary: 'Gestisci Sommario'
         manage_tags: 'Gestisci Tag'
         manage_template: 'Gestisci Template'

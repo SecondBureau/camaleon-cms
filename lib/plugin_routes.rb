@@ -106,7 +106,7 @@ class PluginRoutes
     end
     # convert action parameter into hash
     def fixActionParameter(h)
-      (h.is_a?(ActionController::Parameters) ? h.to_hash : h)
+      (h.is_a?(ActionController::Parameters) ? (h.permit!.to_h rescue h.to_hash) : h)
     end
   end
 
@@ -241,6 +241,12 @@ class PluginRoutes
       res += s.get_languages
     end
     cache_variable("site_all_locales", res.uniq.join("|"))
+  end
+
+  # return all translations for all languages, sample: ['Sample', 'Ejemplo', '....']
+  def self.all_translations(key, *args)
+    args = args.extract_options!
+    all_locales.split('|').map{|_l| I18n.t(args.merge({locale: _l})) }
   end
 
   # return all locales for translated routes
