@@ -10,11 +10,15 @@ module CamaleonCms::ShortCodeHelper
                 Sample: [widget widget_key]")
 
     shortcode_add("load_libraries",
-                  lambda{|attrs, args| cama_load_libraries(*attrs["data"].to_s.split(",")); return ""; },
+                  lambda{|attrs, args|
+                    return args[:shortcode] unless attrs.present?
+                    cama_load_libraries(*attrs["data"].to_s.split(",")); return "";
+                  },
                   "Permit to load libraries on demand, sample: [load_libraries data='datepicker,tinymce']")
 
     shortcode_add("asset",
                   lambda{|attrs, args|
+                    return args[:shortcode] unless attrs.present?
                     url = attrs["as_path"].present? ? ActionController::Base.helpers.asset_url(attrs["file"]) : ActionController::Base.helpers.asset_url(attrs["file"])
                     if attrs["image"].present?
                       ActionController::Base.helpers.image_tag(attrs["file"], class: attrs["class"], style: attrs["style"])
@@ -32,7 +36,7 @@ module CamaleonCms::ShortCodeHelper
 
     shortcode_add("data",
                   lambda{|attrs, args|
-                    cama_shortcode_data(attrs, args) rescue ""
+                    attrs.present? ? (cama_shortcode_data(attrs, args) rescue "") : args[:shortcode]
                   },
                   "Permit to generate specific data of a post.
                   Attributes:
@@ -145,7 +149,7 @@ module CamaleonCms::ShortCodeHelper
   # Return: (String) reg expression string
   def cama_reg_shortcode(codes = nil)
     # "(\\[(#{codes || (@_shortcodes || []).join("|")})(\s|\\]){0}(.*?)\\])" # doesn't support for similar names, like: [media] and [media_gallery]
-    "(\\[(#{codes || (@_shortcodes || []).join("|")})((\s)((?!]).)*|)\\])"
+    "(\\[(#{codes || (@_shortcodes || []).join("|")})((\s)((?!\\]).)*|)\\])"
   end
 
   # determine the content to replace instead the shortcode
