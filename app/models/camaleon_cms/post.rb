@@ -59,6 +59,8 @@ class CamaleonCms::Post < CamaleonCms::PostDefault
   validates_with CamaleonCms::PostUniqValidator
   attr_accessor :show_title_with_parent
   before_create :fix_post_order, if: lambda{|p| !p.post_order.present? || p.post_order == 0 }
+  
+  before_save :set_published_at
 
   # return all parents for current page hierarchy ordered bottom to top
   def parents
@@ -90,6 +92,10 @@ class CamaleonCms::Post < CamaleonCms::PostDefault
   # check if this post was published
   def published?
     status == 'published'
+  end
+  
+  def set_published_at
+    self.published_at = Time.now if published? && published_at.blank?
   end
 
   # check if this is in pending status
