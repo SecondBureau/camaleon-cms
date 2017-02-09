@@ -236,6 +236,6 @@ class CamaleonCms::PostDecorator < CamaleonCms::ApplicationDecorator
   end
   
   def published_at
-    object.published_at.present? object.published_at : object.updated_at
+    object.published_at.present? ? object.published_at : object.updated_at
   end
 end
