@@ -30,7 +30,7 @@ class CamaleonCms::Admin::PostsController < CamaleonCms::AdminController
       posts_all = posts_all.where("LOWER(#{CamaleonCms::Post.table_name}.title) LIKE ?", "%#{params[:q]}%")
     end
 
-    @posts = posts_all
+    @posts = posts_all.order("#{CamaleonCms::Post.table_name}.updated_at desc")
     params[:s] = 'published' unless params[:s].present?
     @lists_tab = params[:s]
     add_breadcrumb I18n.t("camaleon_cms.admin.post_type.#{params[:s]}") if params[:s].present?
