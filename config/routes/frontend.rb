@@ -15,7 +15,9 @@ Rails.application.routes.draw do
       controller "camaleon_cms/frontend" do
         get ":label/:post_type_id-:title" => :post_type, as: "post_type", constraints: {post_type_id: /[0-9]+/, label: /(#{PluginRoutes.all_translations('routes.group', default: 'group').join('|')})/}
         get ":label/:post_type_id-:title/:slug" => :post, as: "post_of_post_type", constraints: {post_type_id: /[0-9]+/, label: /(#{PluginRoutes.all_translations('routes.group', default: 'group').join('|')})/}
-        get ":label/:category_id-:title" => :category, as: "category", constraints: {category_id: /[0-9]+/, label: /(#{PluginRoutes.all_translations('routes.category', default: 'category').join('|')})/}
+        #get ":label/:category_id-:title" => :category, as: "category", constraints: {category_id: /[0-9]+/, label: /(#{PluginRoutes.all_translations('routes.category', default: 'category').join('|')})/}
+        get ":label/:category_id-:title" => :category, as: "category", constraints: {category_id: /[0-9]+/}
+        
         get ":label_cat/:category_id-:title/:slug" => :post, as: "post_of_category", constraints: {category_id: /[0-9]+/, label_cat: /(#{PluginRoutes.all_translations('routes.category', default: 'category').join('|')})/}
         get ":post_type_title/:label_cat/:category_id-:title/:slug" => :post, as: "post_of_category_post_type", constraints:{ post_type_title: /(?!(#{PluginRoutes.all_locales}))[\w\.\-]+/, category_id: /[0-9]+/, label_cat: /(#{PluginRoutes.all_translations('routes.category', default: 'category').join('|')})/ }
         get ":label/:post_tag_id-:title" => :post_tag, as: "post_tag", constraints: {post_tag_id: /[0-9]+/, label: /(#{PluginRoutes.all_translations('routes.tag', default: 'tag').join('|')})/}
