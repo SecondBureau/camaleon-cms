@@ -39,20 +39,22 @@
 * Add the gem in your Gemfile
 
   ```
-  gem "camaleon_cms",  '>= 2.4.3.1' # Stable versions 2.3.6, 2.2.1, 2.1.1, 2.1.0
+  gem "camaleon_cms",  '>= 2.4.3.6' # Stable versions 2.4.3.5, 2.4.3.2, 2.3.6, 2.2.1, 2.1.1, 2.1.0
   # gem "camaleon_cms", github: 'owen2345/camaleon-cms' # current development version
   ```
 * Only Rails 5 support
   
-  Add in your Gemfile
+  Add in your Gemfile draper for Rails 5
   ```
-  gem 'activemodel-serializers-xml', git: 'https://github.com/rails/activemodel-serializers-xml'
-  gem 'draper', github: 'audionerd/draper', branch: 'rails5'
+  gem 'draper', '~> 3'
   ```
-  Create a file "lib/rails/test_unit/sub_test_task.rb" in your project (draper patch)
+  Be careful with sass-rails, recommended v5 (Camaleon doesn't support for sprockets >= 4 which is included in sass-rails 6)
   ```
-  class Rails::SubTestTask < Rake::TestTask
-  end
+  gem 'sass-rails', '~> 5.0'
+  ```
+  Update bundle
+  ```
+  bundle update
   ```
   
 * Install required Gem and dependencies
@@ -80,7 +82,7 @@
 
 # Camaleon CMS (It adapts to your needs)
 
-Camaleon CMS is a dynamic and advanced content management system based on Ruby on Rails 4 and Ruby 1.9.3+. This CMS is an alternative to wordpress for Ruby on Rails developers to manage advanced contents easily.
+Camaleon CMS is a dynamic and advanced content management system based on Ruby on Rails 4+ and Ruby 1.9.3+. This CMS is an alternative to wordpress for Ruby on Rails developers to manage advanced contents easily.
 Camaleon CMS is a flexible manager where you can build your custom content structure without coding anything by custom fields and custom contents type.
 
 To download or publish themes go to themes store:
@@ -101,7 +103,7 @@ It was released on July, 2015 and tested previously with more than 20 projects b
 * Extend or customize the functionalities by plugins
 * Manage your content visualization by themes
 * Advanced User roles
-* Integrate into existent rails 4 projects
+* Integrate into existent rails 4+ projects
 * Other features:
   - Shortcodes
   - Widgets
@@ -170,7 +172,7 @@ http://camaleon.tuzitio.com/license.html
 RAILS_ENV=test bundle exec rake app:db:migrate
 RAILS_ENV=test bundle exec rake app:db:test:prepare
 ```
-* Configure/Install Poltergaist and change your phanthomjs path in spec/spec_helper.rb
+* Configure/Install Poltergeist and change your phanthomjs path in spec/spec_helper.rb
 
 * Run testing
 ```
